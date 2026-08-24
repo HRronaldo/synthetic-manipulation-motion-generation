@@ -1,0 +1,280 @@
+# CODE
+import os
+import nest_asyncio
+nest_asyncio.apply()
+
+from argparse import ArgumentParser, Namespace
+from isaaclab.app import AppLauncher
+
+parser = ArgumentParser()
+AppLauncher.add_app_launcher_args(parser)
+args_cli = parser.parse_args([])
+args_cli.enable_cameras = True
+args_cli.kit_args = "--enable omni.videoencoding"
+
+config = {
+    "task": "Isaac-Stack-Cube-Franka-IK-Rel-Blueprint-Mimic-v0",  
+    "num_envs": num_envs,                                       
+    "generation_num_trials": num_trials.value,                         
+    "input_file": "datasets/annotated_dataset.hdf5",     
+    "output_file": "datasets/generated_dataset.hdf5", 
+    "pause_subtask": False,
+    "enable": "omni.kit.renderer.capture",
+}
+
+# Update the default configuration
+args_dict = vars(args_cli)
+args_dict.update(config)
+args_cli = Namespace(**args_dict)
+
+# Now launch the simulator with the final configuration
+app_launcher = AppLauncher(args_cli)
+simulation_app = app_launcher.app
+
+import asyncio
+import gymnasium as gym
+import numpy as np
+import random
+import torch
+
+import isaaclab_mimic.envs  # noqa: F401
+from isaaclab_mimic.datagen.generation import env_loop, setup_env_config, setup_async_generation
+from isaaclab_mimic.datagen.utils import get_env_name_from_dataset, setup_output_paths, interactive_update_randomizable_params, reset_env
+from isaaclab.managers import ObservationTermCfg as ObsTerm
+from notebook_utils import ISAACLAB_OUTPUT_DIR
+
+import isaaclab_tasks  # noqa: F401
+num_envs = args_cli.num_envs
+
+# Setup output paths and get env name
+output_dir, output_file_name = setup_output_paths(args_cli.output_file)
+env_name = args_cli.task or get_env_name_from_dataset(args_cli.input_file)
+
+# Configure environment
+env_cfg, success_term = setup_env_config(
+    env_name=env_name,
+    output_dir=output_dir,
+    output_file_name=output_file_name,
+    num_envs=num_envs,
+    device=args_cli.device,
+    generation_num_trials=args_cli.generation_num_trials,
+)
+# Set observation output directory
+for obs in vars(env_cfg.observations.rgb_camera).values():
+    if not isinstance(obs, ObsTerm):
+        continue
+    obs.params["image_path"] = os.path.join(ISAACLAB_OUTPUT_DIR, obs.params["image_path"])
+env_cfg.observations
+
+
+# create environment
+env = gym.make(env_name, cfg=env_cfg).unwrapped
+
+# set seed for generation
+random.seed(env.cfg.datagen_config.seed)
+np.random.seed(env.cfg.datagen_config.seed)
+torch.manual_seed(env.cfg.datagen_config.seed)
+
+# reset before starting
+reset_env(env, 100)
+
+
+# ERROR LOG
+[WARN][AppLauncher]: There are no arguments attached to the ArgumentParser object. If you have your own arguments, please load your own arguments before calling the `AppLauncher.add_app_launcher_args` method. This allows the method to check the validity of the arguments and perform checks for argument names.
+[INFO][AppLauncher]: Using device: cuda:0
+[INFO][AppLauncher]: Loading experience file: /root/IsaacLab/apps/isaaclab.python.rendering.kit
+Warp CUDA error: Failed to get driver entry point 'cuDeviceGetUuid' (CUDA error 1)
+Warp CUDA error: Function cuDeviceGetUuid_f: a suitable driver entry point was not found
+Warp CUDA error 36: API call is not supported in the installed CUDA driver (in function cuda_init, /builds/omniverse/warp/warp/native/warp.cu:277)
+[INFO]: Parsing configuration from: <class 'isaaclab_mimic.envs.franka_stack_ik_rel_blueprint_mimic_env_cfg.FrankaCubeStackIKRelBlueprintMimicEnvCfg'>
+[Warning] [simulation_app.simulation_app] Modules: ['omni.kit_app'] were loaded before SimulationApp was started and might not be loaded correctly.
+[Warning] [simulation_app.simulation_app] Please check to make sure no extra omniverse or pxr modules are imported before the call to SimulationApp(...)
+[Warning] [simulation_app.simulation_app] Non-headless mode not supported with jupyter notebooks
+[Warning] [simulation_app.simulation_app] fast shutdown not supported with jupyter notebooks
+[Info] [carb] Logging to file: /opt/conda/envs/isaaclab/lib/python3.11/site-packages/omni/logs/Kit/Isaac-Sim/5.0/kit_20260824_143646.log
+2026-08-24T06:36:47Z [973ms] [Warning] [carb.graphics-vulkan.plugin] Could not initialize nvperf_grfx_host library. PerfSDK disabled
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.126.09    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4090          | Yes: 0 |     | 24564   MB | 10de      | 0          |
+|     |                                  |        |     |            | 2684      | cf29ef8d.. |
+|     |                                  |        |     |            | 9         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 5.15.0-164-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: Intel(R) Xeon(R) Gold 6430
+| Bare Metal Cores: 64 | Bare Metal Logical Cores: 128
+| Core Usage Quota: 14
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 51200 | Free Memory: 48426
+| Total Page/Swap (MB): 0 | Free Page/Swap: 0
+|---------------------------------------------------------------------------------------------|
+2026-08-24T06:36:49Z [2,929ms] [Warning] [omni.log] Source: omni.hydra was already registered.
+2026-08-24T06:36:50Z [3,583ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+2026-08-24T06:36:54Z [7,174ms] [Warning] [pxr.Semantics] pxr.Semantics is deprecated - please use Semantics instead
+2026-08-24T06:36:54Z [7,799ms] [Warning] [omni.replicator.core.scripts.extension] No material configuration file, adding configuration to material settings directly.
+2026-08-24T06:36:59Z [12,857ms] [Warning] [usdrt.population.plugin] using high frequency span is disabled
+2026-08-24T06:36:59Z [12,890ms] [Warning] [omni.fabric.plugin] Warning: attribute viewportHandle not found for bucket id 9
+
+2026-08-24T06:36:59Z [13,086ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [carb::dictionary::ISerializer v1.1] (plugin: carb.dictionary.serializer-json.plugin), by client: carb.scenerenderer-rtx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+2026-08-24T06:37:45Z [58,653ms] [Warning] [usdrt.hydra.fabric_scene_delegate.plugin] using high frequency span is disabled
+2026-08-24T06:37:45Z [58,653ms] [Warning] [usdrt.hydra.fabric_scene_delegate.plugin] using high frequency span is disabled
+2026-08-24T06:37:45Z [58,708ms] [Warning] [usdrt.hydra.fabric_scene_delegate.plugin] using high frequency span with attrs is disabled
+2026-08-24T06:37:45Z [58,826ms] [Warning] [usdrt.hydra.fabric_scene_delegate.plugin] using high frequency span is disabled
+2026-08-24T06:37:45Z [58,826ms] [Warning] [usdrt.hydra.fabric_scene_delegate.plugin] using high frequency span is disabled
+2026-08-24T06:39:51Z [184,226ms] [Warning] [isaaclab.envs.manager_based_env] Seed not set for the environment. The environment creation may not be deterministic.
+[INFO]: Base environment:
+	Environment device    : cuda:0
+	Environment seed      : None
+	Physics step-size     : 0.01
+	Rendering step-size   : 0.02
+	Environment step-size : 0.05
+[INFO]: Time taken for scene creation : 20.673541 seconds
+---------------------------------------------------------------------------
+RuntimeError                              Traceback (most recent call last)
+Cell In[2], line 70
+     66 env_cfg.observations
+     69 # create environment
+---> 70 env = gym.make(env_name, cfg=env_cfg).unwrapped
+     72 # set seed for generation
+     73 random.seed(env.cfg.datagen_config.seed)
+
+File /opt/conda/envs/isaaclab/lib/python3.11/site-packages/gymnasium/envs/registration.py:734, in make(id, max_episode_steps, disable_env_checker, **kwargs)
+    728         logger.warn(
+    729             f"The environment is being initialised with render_mode={render_mode!r} "
+    730             f"that is not in the possible render_modes ({render_modes})."
+    731         )
+    733 try:
+--> 734     env = env_creator(**env_spec_kwargs)
+    735 except TypeError as e:
+    736     if (
+    737         str(e).find("got an unexpected keyword argument 'render_mode'") >= 0
+    738         and apply_human_rendering
+    739     ):
+
+File ~/IsaacLab/source/isaaclab/isaaclab/envs/manager_based_rl_env.py:82, in ManagerBasedRLEnv.__init__(self, cfg, render_mode, **kwargs)
+     79 self.episode_length_buf = torch.zeros(cfg.scene.num_envs, device=cfg.sim.device, dtype=torch.long)
+     81 # initialize the base class to setup the scene.
+---> 82 super().__init__(cfg=cfg)
+     83 # store the render mode
+     84 self.render_mode = render_mode
+
+File ~/IsaacLab/source/isaaclab/isaaclab/envs/manager_based_env.py:136, in ManagerBasedEnv.__init__(self, cfg)
+    133 with Timer("[INFO]: Time taken for scene creation", "scene_creation"):
+    134     # set the stage context for scene creation steps which use the stage
+    135     with use_stage(self.sim.get_initial_stage()):
+--> 136         self.scene = InteractiveScene(self.cfg.scene)
+    137         attach_stage_to_usd_context()
+    138 print("[INFO]: Scene manager: ", self.scene)
+
+File ~/IsaacLab/source/isaaclab/isaaclab/scene/interactive_scene.py:179, in InteractiveScene.__init__(self, cfg)
+    176 self._global_prim_paths = list()
+    177 if self._is_scene_setup_from_cfg():
+    178     # add entities from config
+--> 179     self._add_entities_from_cfg()
+    180     # clone environments on a global scope if environment is homogeneous
+    181     if self.cfg.replicate_physics:
+
+File ~/IsaacLab/source/isaaclab/isaaclab/scene/interactive_scene.py:738, in InteractiveScene._add_entities_from_cfg(self)
+    736     self._terrain = asset_cfg.class_type(asset_cfg)
+    737 elif isinstance(asset_cfg, ArticulationCfg):
+--> 738     self._articulations[asset_name] = asset_cfg.class_type(asset_cfg)
+    739 elif isinstance(asset_cfg, DeformableObjectCfg):
+    740     self._deformable_objects[asset_name] = asset_cfg.class_type(asset_cfg)
+
+File ~/IsaacLab/source/isaaclab/isaaclab/assets/articulation/articulation.py:100, in Articulation.__init__(self, cfg)
+     94 def __init__(self, cfg: ArticulationCfg):
+     95     """Initialize the articulation.
+     96 
+     97     Args:
+     98         cfg: A configuration instance.
+     99     """
+--> 100     super().__init__(cfg)
+
+File ~/IsaacLab/source/isaaclab/isaaclab/assets/asset_base.py:84, in AssetBase.__init__(self, cfg)
+     82 # spawn the asset
+     83 if self.cfg.spawn is not None and not asset_path_is_regex:
+---> 84     self.cfg.spawn.func(
+     85         self.cfg.prim_path,
+     86         self.cfg.spawn,
+     87         translation=self.cfg.init_state.pos,
+     88         orientation=self.cfg.init_state.rot,
+     89     )
+     90 # check that spawn was successful
+     91 matching_prims = sim_utils.find_matching_prims(self.cfg.prim_path)
+
+File ~/IsaacLab/source/isaaclab/isaaclab/sim/utils.py:268, in clone.<locals>.wrapper(prim_path, cfg, *args, **kwargs)
+    266 prim_paths = [f"{source_prim_path}/{asset_path}" for source_prim_path in source_prim_paths]
+    267 # spawn single instance
+--> 268 prim = func(prim_paths[0], cfg, *args, **kwargs)
+    269 # set the prim visibility
+    270 if hasattr(cfg, "visible"):
+
+File ~/IsaacLab/source/isaaclab/isaaclab/sim/spawners/from_files/from_files.py:76, in spawn_from_usd(prim_path, cfg, translation, orientation, **kwargs)
+     45 """Spawn an asset from a USD file and override the settings with the given config.
+     46 
+     47 In the case of a USD file, the asset is spawned at the default prim specified in the USD file.
+   (...)     73     FileNotFoundError: If the USD file does not exist at the given path.
+     74 """
+     75 # spawn asset from the given usd file
+---> 76 return _spawn_from_usd_file(prim_path, cfg.usd_path, cfg, translation, orientation)
+
+File ~/IsaacLab/source/isaaclab/isaaclab/sim/spawners/from_files/from_files.py:277, in _spawn_from_usd_file(prim_path, usd_path, cfg, translation, orientation, **kwargs)
+    274 # spawn asset if it doesn't exist.
+    275 if not prim_utils.is_prim_path_valid(prim_path):
+    276     # add prim as reference to stage
+--> 277     prim_utils.create_prim(
+    278         prim_path,
+    279         usd_path=usd_path,
+    280         translation=translation,
+    281         orientation=orientation,
+    282         scale=cfg.scale,
+    283     )
+    284 else:
+    285     omni.log.warn(f"A prim already exists at prim path: '{prim_path}'.")
+
+File /opt/conda/envs/isaaclab/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.utils/isaacsim/core/utils/prims.py:757, in create_prim(prim_path, prim_type, position, translation, orientation, scale, usd_path, semantic_label, semantic_type, attributes)
+    755 if scale is not None:
+    756     scale = backend_utils.expand_dims(backend_utils.convert(scale, device), 0)
+--> 757 XFormPrim(prim_path, positions=position, translations=translation, orientations=orientation, scales=scale)
+    759 return prim
+
+File /opt/conda/envs/isaaclab/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.prims/isaacsim/core/prims/impl/xform_prim.py:153, in XFormPrim.__init__(self, prim_paths_expr, name, positions, translations, orientations, scales, visibilities, reset_xform_properties, usd)
+    151     XFormPrim._on_physics_ready(self, None)
+    152 if not self._non_root_link and reset_xform_properties:
+--> 153     self._set_xform_properties()
+    154 if not self._non_root_link:
+    155     if translations is not None and positions is not None:
+
+File /opt/conda/envs/isaaclab/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.prims/isaacsim/core/prims/impl/xform_prim.py:1256, in XFormPrim._set_xform_properties(self)
+   1254         xform_op_rot = UsdGeom.XformOp(self._prims[i].GetAttribute("xformOp:orient"))
+   1255     xformable.SetXformOpOrder([xform_op_tranlsate, xform_op_rot, xform_op_scale])
+-> 1256 self.set_world_poses(positions=current_positions, orientations=current_orientations)
+   1257 return
+
+File /opt/conda/envs/isaaclab/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.prims/isaacsim/core/prims/impl/xform_prim.py:824, in XFormPrim.set_world_poses(self, positions, orientations, indices, usd)
+    822         write_idx += 1
+    823     parent_transforms = self._backend_utils.convert(parent_transforms, dtype="float32", device=self._device)
+--> 824     calculated_translations, calculated_orientations = self._backend_utils.get_local_from_world(
+    825         parent_transforms, positions, orientations, self._device
+    826     )
+    827     XFormPrim.set_local_poses(
+    828         self, translations=calculated_translations, orientations=calculated_orientations, indices=indices
+    829     )
+    830 return
+
+File /opt/conda/envs/isaaclab/lib/python3.11/site-packages/isaacsim/exts/isaacsim.core.utils/isaacsim/core/utils/torch/transformations.py:53, in get_local_from_world(parent_transforms, positions, orientations, device)
+     51 # TODO: vectorize this
+     52 for i in range(positions.shape[0]):
+---> 53     local_transform = torch.linalg.solve(
+     54         torch.transpose(parent_transforms[i].to(device), 0, 1), my_world_transforms[i]
+     55     )
+     56     transform = Gf.Transform()
+     57     transform.SetMatrix(Gf.Matrix4d(torch.transpose(local_transform, 0, 1).tolist()))
+
+RuntimeError: Error in dlopen: libtorch_cuda_linalg.so: cannot open shared object file: No such file or directory
