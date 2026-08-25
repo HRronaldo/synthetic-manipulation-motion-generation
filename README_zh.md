@@ -1,5 +1,21 @@
 # NVIDIA Omniverse 蓝图：机器人合成操作动作生成（Synthetic Manipulation Motion Generation for Robotics）
 
+> 写在最前
+> 没有使用官方镜像，直接使用“算力自由”平台云服务器**裸跑**！！！
+> <img width="1328" height="538" alt="image" src="https://github.com/user-attachments/assets/b71229ec-3510-46fc-8594-3bdf40bc65f0" />
+> 配置：
+>   显卡：RTX 4090 / 24GB * 1
+>   CPU：14 核，Intel(R) Xeon(R) Gold 6430
+>   显存：24.00 GB
+>   内存：50.00 GB
+>   硬盘类型：SSD
+>   系统盘：30.00 GB
+>   免费数据盘：50.00 GB
+>   扩展数据盘：100.00 GB
+>   镜像名称：具身机器人
+>   镜像版本：IsaacSim5.0+IsaacLab-2.2.1
+
+
 NVIDIA Isaac GR00T 合成操作动作生成蓝图是理想的入门之选。这是一套参考工作流，用于基于少量人类示范（human demonstrations），以指数级规模生成海量的机器人操作合成运动轨迹。该蓝图构建于 [NVIDIA Omniverse™](https://developer.nvidia.com/isaac/sim) 和 [NVIDIA Cosmos™](https://www.nvidia.com/en-us/ai/cosmos/) 之上。
 
 ![image](https://github.com/user-attachments/assets/f3621fcc-91c3-4f4d-a516-c9c9c7f0d339)
