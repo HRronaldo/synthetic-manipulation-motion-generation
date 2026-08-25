@@ -4,15 +4,25 @@
 > 没有使用官方镜像，直接使用“算力自由”平台云服务器**裸跑**！！！
 > <img width="1328" height="538" alt="image" src="https://github.com/user-attachments/assets/b71229ec-3510-46fc-8594-3bdf40bc65f0" />
 > 配置：
+> 
 >   显卡：RTX 4090 / 24GB * 1
+> 
 >   CPU：14 核，Intel(R) Xeon(R) Gold 6430
+> 
 >   显存：24.00 GB
+> 
 >   内存：50.00 GB
+> 
 >   硬盘类型：SSD
+> 
 >   系统盘：30.00 GB
+> 
 >   免费数据盘：50.00 GB
+> 
 >   扩展数据盘：100.00 GB
+> 
 >   镜像名称：具身机器人
+> 
 >   镜像版本：IsaacSim5.0+IsaacLab-2.2.1
 
 
